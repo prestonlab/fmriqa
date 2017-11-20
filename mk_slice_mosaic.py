@@ -10,15 +10,16 @@ import matplotlib.pyplot as plt
 import sys
 
 
-def mk_slice_mosaic(imgdata,outfile,title,contourdata=[],ncols=6,colorbar=True):
+def mk_slice_mosaic(imgdata,outfile,title,contourdata=[],ncols=6,colorbar=True, verbose=False):
     if imgdata.shape[0]==imgdata.shape[1]==imgdata.shape[2]:
         min_dim=2
     else:
         min_dim=N.where(N.min(imgdata.shape[0:3])==imgdata.shape[0:3])[0]
 
         slice_dims=N.where(N.min(imgdata.shape[0:3])!=imgdata.shape[0:3])[0]
-        print 'min_dim:',min_dim
-        print 'slice_dim:',slice_dims
+        if verbose:
+            print 'min_dim:',min_dim
+            print 'slice_dim:',slice_dims
         
     #if not len(imgdata.shape)==3:
     #    sys.stdout.write(__doc__)
@@ -28,7 +29,8 @@ def mk_slice_mosaic(imgdata,outfile,title,contourdata=[],ncols=6,colorbar=True):
         if not contourdata==[]:
             contourmosaic=N.zeros((nrows*imgdata.shape[slice_dims[0]],ncols*imgdata.shape[slice_dims[1]]))
         ctr=0
-        print mosaic.shape
+        if verbose:
+            print mosaic.shape
         
         for row in range(nrows):
             rowstart=row*imgdata.shape[slice_dims[0]]
@@ -37,7 +39,8 @@ def mk_slice_mosaic(imgdata,outfile,title,contourdata=[],ncols=6,colorbar=True):
                 if ctr<imgdata.shape[min_dim]:
                     colstart=col*imgdata.shape[slice_dims[1]]
                     colend=(col+1)*imgdata.shape[slice_dims[1]]
-                    print rowstart,rowend,colstart,colend
+                    if verbose:
+                        print rowstart,rowend,colstart,colend
                     if min_dim==0:
                         imgslice=imgdata[ctr,:,::-1].T
                         if not contourdata==[]:
@@ -50,7 +53,8 @@ def mk_slice_mosaic(imgdata,outfile,title,contourdata=[],ncols=6,colorbar=True):
                         imgslice=imgdata[:,::-1,ctr].T
                         if not contourdata==[]:
                             contourslice=contourdata[:,::-1,ctr].T          
-                    print imgslice.shape
+                    if verbose:
+                        print imgslice.shape
                     try:
                         mosaic[rowstart:rowend,colstart:colend]=imgslice
                     except:
