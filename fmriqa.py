@@ -37,13 +37,10 @@ AJKZ_thresh=25
 nback=1
 nforward=2
 
-
 def error_and_exit(msg):
     print msg
     sys.stdout.write(__doc__)
     sys.exit(2)
-
-
     
 def main():
     verbose=True
@@ -56,7 +53,7 @@ def main():
         #infile='/corral-repl/utexas/poldracklab/openfmri/shared2/ds105/sub001/BOLD/task001_run001/bold_mcf.nii.gz'
         #TR=2.5
 
-    qadir=fmriqa(infile,TR,verbose=verbose)
+    qadir=fmriqa(infile,TR,verbose=verbose, plot_data=True)
     
 def fmriqa(infile,TR,outdir=None,maskfile=None,motfile=None,verbose=False,plot_data=True):
     save_sfnr=True
@@ -92,13 +89,11 @@ def fmriqa(infile,TR,outdir=None,maskfile=None,motfile=None,verbose=False,plot_d
     if not os.path.exists(motfile):
         error_and_exit('%s does not exist!'%motfile)
     
-    
     if not os.path.exists(qadir):
         os.mkdir(qadir)
     else:
         print 'QA dir already exists - overwriting!'
        
-    
     if verbose:
         print 'infile:',infile
         print 'maskfile:',maskfile
@@ -133,8 +128,6 @@ def fmriqa(infile,TR,outdir=None,maskfile=None,motfile=None,verbose=False,plot_d
     voxcv[voxcv>1]=1
     
     # compute timepoint statistics
-    
-    
     maskmedian=N.zeros(imgdata.shape[3])
     maskmean=N.zeros(imgdata.shape[3])
     maskmad=N.zeros(imgdata.shape[3])
@@ -150,7 +143,6 @@ def fmriqa(infile,TR,outdir=None,maskfile=None,motfile=None,verbose=False,plot_d
         maskmean[t]=N.mean(tmp_brain)
         maskcv[t]=maskmad[t]/maskmedian[t]
         imgsnr[t]=maskmean[t]/N.std(tmp_nonbrain)
-        
  
     # perform Greve et al./fBIRN spike detection
     #1. Remove mean and temporal trend from each voxel.
@@ -208,11 +200,11 @@ def fmriqa(infile,TR,outdir=None,maskfile=None,motfile=None,verbose=False,plot_d
     meansfnr=N.mean(voxsfnr[maskvox])
     
     # create plots
-
-    #
     #imgdata_flat=imgdata.reshape(N.prod(imgdata.shape))
     #imgdata_nonzero=imgdata_flat[imgdata_flat>0.0]
-    
+
+    if verbose:
+        print 'checking for bad volumes'
     scaledmean=(maskmean - N.mean(maskmean))/N.std(maskmean)
     mean_running_diff=N.zeros(maskmad.shape)
     mean_running_diff=(maskmean[1:]-maskmean[:-1])/((maskmean[1:]+maskmean[:-1])/2.0)
@@ -239,6 +231,8 @@ def fmriqa(infile,TR,outdir=None,maskfile=None,motfile=None,verbose=False,plot_d
     badvols_expanded_index=N.where(badvols_expanded>0)[0]
     #print badvols_expanded_index
     if len(badvols_expanded_index)>0:
+        if verbose:
+            print 'writing scrub volumes'
         N.savetxt(os.path.join(qadir,'scrubvols.txt'),badvols_expanded_index,fmt='%d')
 
         # make scrubing design matrix - one colum per scrubbed timepoint
@@ -246,11 +240,12 @@ def fmriqa(infile,TR,outdir=None,maskfile=None,motfile=None,verbose=False,plot_d
         for i in range(len(badvols_expanded_index)):
             scrubdes[badvols_expanded_index[i],i]=1
         N.savetxt(os.path.join(qadir,'scrubdes.txt'),scrubdes,fmt='%d')
-
     else:
         scrubdes=[]
         
     # save out complete confound file
+    if verbose:
+        print 'writing confound file'
     confound_mtx=N.zeros((len(DVARS),14))
     confound_mtx[:,0:6]=motpars
     confound_mtx[1:,6:12]=motpars[:-1,:]-motpars[1:,:] # derivs
@@ -267,10 +262,10 @@ def fmriqa(infile,TR,outdir=None,maskfile=None,motfile=None,verbose=False,plot_d
     datavars={'imgsnr':imgsnr,'meansfnr':meansfnr,'spikes':spikes,'badvols':badvols_expanded_index}
 
     if plot_data:
-        print 'before plot'
+        if verbose:
+            print 'plotting timeseries data'
         trend=plot_timeseries(maskmean,'Mean signal (unfiltered)',os.path.join(qadir,'maskmean.png'),
                         plottrend=True,ylabel='Mean MR signal')
-        print 'after plot'
         datavars['trend']=trend
         plot_timeseries(maskmad,'Median absolute deviation (robust SD)',
                         os.path.join(qadir,'mad.png'),ylabel='MAD')
@@ -307,15 +302,19 @@ def fmriqa(infile,TR,outdir=None,maskfile=None,motfile=None,verbose=False,plot_d
         else:
             orientation='axial'
 
+        if verbose:
+            print 'plotting volume data'
         mk_slice_mosaic(voxmean,os.path.join(qadir,'voxmean.png'),'Image mean (with mask)',contourdata=maskdata)
         mk_slice_mosaic(voxcv,os.path.join(qadir,'voxcv.png'),'Image CV')
         mk_slice_mosaic(voxsfnr,os.path.join(qadir,'voxsfnr.png'),'Image SFNR')
 
-
+        if verbose:
+            print 'creating report'
         mk_report(infile,qadir,datavars)
-
  
     # def save_vars(infile,qadir,datavars):
+    if verbose:
+        print 'writing QA data'
     datafile=os.path.join(qadir,'qadata.csv')
     f=open(datafile,'w')
     f.write('SNR,%f\n'%N.mean(datavars['imgsnr']))
@@ -326,6 +325,7 @@ def fmriqa(infile,TR,outdir=None,maskfile=None,motfile=None,verbose=False,plot_d
     f.close()
 
     if save_sfnr:
+        print 'writing sfnr image'
         sfnrimg=nib.Nifti1Image(voxsfnr,img.get_affine())
         sfnrimg.to_filename(os.path.join(qadir,'voxsfnr.nii.gz'))
 
