@@ -14,8 +14,7 @@ def mk_slice_mosaic(imgdata,outfile,title,contourdata=[],ncols=6,colorbar=True, 
     if imgdata.shape[0]==imgdata.shape[1]==imgdata.shape[2]:
         min_dim=2
     else:
-        min_dim=N.where(N.min(imgdata.shape[0:3])==imgdata.shape[0:3])[0]
-
+        min_dim=N.where(N.min(imgdata.shape[0:3])==imgdata.shape[0:3])[0][0]
         slice_dims=N.where(N.min(imgdata.shape[0:3])!=imgdata.shape[0:3])[0]
         if verbose:
             print 'min_dim:',min_dim
