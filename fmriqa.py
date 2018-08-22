@@ -19,7 +19,7 @@ import statsmodels.api
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import sklearn.cross_validation
+import sklearn.model_selection
 from matplotlib.backends.backend_pdf import PdfPages
 from mk_slice_mosaic import *
 from matplotlib.mlab import psd
@@ -168,7 +168,6 @@ def fmriqa(infile,TR,outdir=None,maskfile=None,motfile=None,verbose=False,plot_d
         detrended_data[maskvox[0][i],maskvox[1][i],maskvox[2][i],:]=tmp_detrended
         detrended_zscore[maskvox[0][i],maskvox[1][i],maskvox[2][i],:]=(tmp_detrended - N.mean(tmp_detrended))/N.std(tmp_detrended)
     
-    loo=sklearn.cross_validation.LeaveOneOut(nslices)
     AAZ=N.zeros((nslices,ntp))
         
     for s in range(nslices):
@@ -179,13 +178,13 @@ def fmriqa(infile,TR,outdir=None,maskfile=None,motfile=None,verbose=False,plot_d
     
     if verbose:
         print 'computing outliers'
-        
-    for train,test in loo:
+    
+    loo=sklearn.model_selection.LeaveOneOut()
+    for train,test in loo.split(AAZ):
         for tp in range(ntp):
             train_mean=N.mean(AAZ[train,tp])
             train_std=N.std(AAZ[train,tp])
             JKZ[test,tp]=(AAZ[test,tp] - train_mean)/train_std
-     
     AJKZ=N.abs(JKZ)
     spikes=[]
     if N.max(AJKZ)>AJKZ_thresh:
