@@ -11,13 +11,13 @@ import ctypes, sys, os
 flags = sys.getdlopenflags()
 sys.setdlopenflags(flags|ctypes.RTLD_GLOBAL)
 
+import matplotlib
+matplotlib.use('Agg')
 import numpy as N
 import nibabel as nib
 from compute_fd import *
 from statsmodels.tsa.tsatools import detrend
 import statsmodels.api
-import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import sklearn.model_selection
 from matplotlib.backends.backend_pdf import PdfPages
