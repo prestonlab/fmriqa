@@ -255,6 +255,12 @@ def fmriqa(infile,TR,outdir=None,maskfile=None,motfile=None,verbose=False,plot_d
 
     N.savetxt(os.path.join(qadir,'confound.txt'),confound_mtx)
     
+    # give 12 and 24 columns options
+    motonly = confound_mtx[:,:12]
+    motonly_squared = N.hstack((motonly, N.power(motonly,2)))
+    N.savetxt(os.path.join(qadir,'confound12.txt'),motonly)
+    N.savetxt(os.path.join(qadir,'confound24.txt'),motonly_squared)
+
     #plot_timeseries(scaledmean,'Mean in-mask signal (Z-scored)',
     #            os.path.join(qadir,'scaledmaskmean.png'),spikes,'Potential spikes')
 
